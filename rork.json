@@ -1,0 +1,10 @@
+{
+  "$schema": "https://rork.com/schema/rork.json",
+  "apps": [
+    {
+      "name": "Tread",
+      "path": "ios",
+      "framework": "swift"
+    }
+  ]
+}

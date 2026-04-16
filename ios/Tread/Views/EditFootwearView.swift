@@ -1,0 +1,137 @@
+import SwiftUI
+
+struct EditFootwearView: View {
+    let item: FootwearItem
+    @Environment(FootwearStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name: String
+    @State private var brand: String
+    @State private var type: FootwearType
+    @State private var isDefault: Bool
+    @State private var expectedLifespan: Double
+    @State private var datePurchased: Date
+    @State private var hasPurchaseDate: Bool
+    @State private var notes: String
+    @State private var selectedColor: ColorTag
+
+    init(item: FootwearItem) {
+        self.item = item
+        _name = State(initialValue: item.name)
+        _brand = State(initialValue: item.brand)
+        _type = State(initialValue: item.type)
+        _isDefault = State(initialValue: item.isDefault)
+        _expectedLifespan = State(initialValue: item.expectedLifespanKm)
+        _datePurchased = State(initialValue: item.datePurchased ?? Date())
+        _hasPurchaseDate = State(initialValue: item.datePurchased != nil)
+        _notes = State(initialValue: item.notes)
+        _selectedColor = State(initialValue: ColorTag(rawValue: item.colorTag) ?? .slate)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Name", text: $name)
+                    TextField("Brand (optional)", text: $brand)
+                }
+
+                Section("Type") {
+                    Picker("Type", selection: $type) {
+                        ForEach(FootwearType.allCases) { footwearType in
+                            Label(footwearType.rawValue, systemImage: footwearType.icon)
+                                .tag(footwearType)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+                }
+
+                Section("Color") {
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 10) {
+                            ForEach(ColorTag.allCases) { tag in
+                                Button {
+                                    withAnimation(.snappy) {
+                                        selectedColor = tag
+                                    }
+                                } label: {
+                                    VStack(spacing: 4) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(tag.color.gradient)
+                                                .frame(width: 38, height: 38)
+
+                                            if selectedColor == tag {
+                                                Circle()
+                                                    .strokeBorder(.white, lineWidth: 2.5)
+                                                    .frame(width: 38, height: 38)
+                                                Image(systemName: "checkmark")
+                                                    .font(.system(size: 13, weight: .bold))
+                                                    .foregroundStyle(.white)
+                                            }
+                                        }
+                                        Text(tag.label)
+                                            .font(.caption2)
+                                            .foregroundStyle(selectedColor == tag ? .primary : .tertiary)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .scrollIndicators(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                }
+
+                Section("Expected Lifespan") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("\(Int(expectedLifespan)) km")
+                                .font(.headline)
+                                .monospacedDigit()
+                            Spacer()
+                        }
+                        Slider(value: $expectedLifespan, in: 200...2000, step: 50)
+                    }
+                }
+
+                Section {
+                    Toggle("Set as Default Pair", isOn: $isDefault)
+                    Toggle("Purchase Date", isOn: $hasPurchaseDate.animation(.snappy))
+                    if hasPurchaseDate {
+                        DatePicker("Purchased", selection: $datePurchased, in: ...Date(), displayedComponents: .date)
+                    }
+                }
+
+                Section {
+                    TextField("Notes (optional)", text: $notes, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+            }
+            .navigationTitle("Edit Footwear")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        var updated = item
+                        updated.name = name.trimmingCharacters(in: .whitespaces)
+                        updated.brand = brand.trimmingCharacters(in: .whitespaces)
+                        updated.type = type
+                        updated.isDefault = isDefault
+                        updated.expectedLifespanKm = expectedLifespan
+                        updated.datePurchased = hasPurchaseDate ? datePurchased : nil
+                        updated.notes = notes.trimmingCharacters(in: .whitespaces)
+                        updated.colorTag = selectedColor.rawValue
+                        store.updateFootwear(updated)
+                        dismiss()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+    }
+}
