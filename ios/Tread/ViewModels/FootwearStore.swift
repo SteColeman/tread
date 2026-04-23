@@ -61,6 +61,21 @@ class FootwearStore {
         save()
     }
 
+    func setAsDefault(_ item: FootwearItem) {
+        guard let index = footwear.firstIndex(where: { $0.id == item.id }) else { return }
+        clearDefaultStatus()
+        footwear[index].isDefault = true
+        if footwear[index].status == .retired {
+            footwear[index].status = .active
+        }
+        save()
+    }
+
+    func clearDefault() {
+        clearDefaultStatus()
+        save()
+    }
+
     func retireFootwear(_ item: FootwearItem) {
         guard let index = footwear.firstIndex(where: { $0.id == item.id }) else { return }
         footwear[index].status = .retired

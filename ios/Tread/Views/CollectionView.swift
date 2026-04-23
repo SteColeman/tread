@@ -34,6 +34,19 @@ struct CollectionView: View {
                                     FootwearCard(item: item)
                                 }
                                 .buttonStyle(.plain)
+                                .contextMenu {
+                                    if item.status == .active {
+                                        if item.isDefault {
+                                            Button("Clear Active Pair", systemImage: "star.slash") {
+                                                store.clearDefault()
+                                            }
+                                        } else {
+                                            Button("Set as Active Pair", systemImage: "star.fill") {
+                                                store.setAsDefault(item)
+                                            }
+                                        }
+                                    }
+                                }
                                 .opacity(appeared ? 1 : 0)
                                 .offset(y: appeared ? 0 : 16)
                                 .animation(.spring(response: 0.4).delay(Double(index) * 0.04), value: appeared)

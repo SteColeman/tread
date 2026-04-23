@@ -6,6 +6,7 @@ struct ActivityView: View {
     @State private var isLoading = false
     @State private var showAssignSheet = false
     @State private var selectedSession: WearSession?
+    @State private var showActivePicker = false
 
     private var todaySessions: [WearSession] {
         store.sessions.filter { Calendar.current.isDateInToday($0.date) }
@@ -40,6 +41,7 @@ struct ActivityView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    activePairCard
                     todayCard
                     weeklyChart
                     unassignedSection
@@ -65,12 +67,82 @@ struct ActivityView: View {
             .sheet(item: $selectedSession) { session in
                 AssignSessionView(session: session)
             }
+            .sheet(isPresented: $showActivePicker) {
+                ActivePairPickerView()
+            }
             .task {
                 if store.sessions.isEmpty {
                     await syncHealthKit()
                 }
             }
         }
+    }
+
+    private var activePairCard: some View {
+        Button {
+            showActivePicker = true
+        } label: {
+            HStack(spacing: 14) {
+                if let pair = store.defaultPair {
+                    let colorTag = ColorTag(rawValue: pair.colorTag) ?? .slate
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(colorTag.color.gradient)
+                        .frame(width: 44, height: 44)
+                        .overlay {
+                            Image(systemName: pair.type.icon)
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Text("Active Pair")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 8))
+                                .foregroundStyle(.orange)
+                        }
+                        Text(pair.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
+                } else {
+                    ZStack {
+                        Circle()
+                            .fill(Color.primary.opacity(0.05))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "shoe.2")
+                            .font(.system(size: 17))
+                            .foregroundStyle(.secondary)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("No Active Pair")
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Text("Tap to choose which pair you're wearing")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer(minLength: 0)
+
+                Text("Change")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.blue)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(14)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(.rect(cornerRadius: 16))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: showActivePicker)
     }
 
     private var todayCard: some View {
@@ -292,6 +364,92 @@ struct ActivityView: View {
 
         let weeklyData = await healthKit.fetchWeeklyData()
         store.importHealthKitData(weeklyData)
+    }
+}
+
+struct ActivePairPickerView: View {
+    @Environment(FootwearStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("Your active pair is used as the default fallback for new walking activity from Apple Health.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                }
+
+                Section("Choose Active Pair") {
+                    ForEach(store.activeFootwear) { item in
+                        Button {
+                            store.setAsDefault(item)
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 12) {
+                                let colorTag = ColorTag(rawValue: item.colorTag) ?? .slate
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(colorTag.color.gradient)
+                                    .frame(width: 36, height: 36)
+                                    .overlay {
+                                        Image(systemName: item.type.icon)
+                                            .font(.system(size: 15, weight: .medium))
+                                            .foregroundStyle(.white.opacity(0.9))
+                                    }
+
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(item.name)
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                    if !item.brand.isEmpty {
+                                        Text(item.brand)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+
+                                Spacer()
+
+                                if item.isDefault {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if store.activeFootwear.isEmpty {
+                        Text("Add an active pair from Collection first.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if store.defaultPair != nil {
+                    Section {
+                        Button(role: .destructive) {
+                            store.clearDefault()
+                            dismiss()
+                        } label: {
+                            Text("Clear Active Pair")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Active Pair")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 }
 

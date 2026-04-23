@@ -63,6 +63,15 @@ struct FootwearDetailView: View {
                 Menu {
                     Button("Edit", systemImage: "pencil") { showEditSheet = true }
                     if currentItem.status == .active {
+                        if currentItem.isDefault {
+                            Button("Clear Active Pair", systemImage: "star.slash") {
+                                store.clearDefault()
+                            }
+                        } else {
+                            Button("Set as Active Pair", systemImage: "star.fill") {
+                                store.setAsDefault(currentItem)
+                            }
+                        }
                         Button("Log Condition", systemImage: "heart.text.clipboard") { showConditionCheck = true }
                         Divider()
                         Button("Retire", systemImage: "archivebox", role: .destructive) { showRetireAlert = true }
