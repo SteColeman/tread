@@ -4,7 +4,6 @@ struct ActivityView: View {
     @Environment(FootwearStore.self) private var store
     @Environment(HealthKitService.self) private var healthKit
     @State private var isLoading = false
-    @State private var showAssignSheet = false
     @State private var selectedSession: WearSession?
     @State private var showActivePicker = false
 
@@ -28,7 +27,7 @@ struct ActivityView: View {
             let daySessions = store.sessions.filter { calendar.isDate($0.date, inSameDayAs: date) }
             let dist = daySessions.reduce(0.0) { $0 + $1.distanceKm }
             let formatter = DateFormatter()
-            formatter.dateFormat = "EEE"
+            formatter.dateFormat = "EEEEE"
             return (formatter.string(from: date), dist, date)
         }
     }
@@ -40,16 +39,24 @@ struct ActivityView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    activePairCard
-                    todayCard
+                VStack(spacing: 24) {
+                    activePairPill
+                        .padding(.horizontal, 20)
+
+                    todayHero
+                        .padding(.horizontal, 20)
+
                     weeklyChart
+                        .padding(.horizontal, 20)
+
                     unassignedSection
+                        .padding(.horizontal, 16)
+
                     recentActivitySection
+                        .padding(.horizontal, 16)
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 32)
+                .padding(.top, 4)
+                .padding(.bottom, 48)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Activity")
@@ -78,151 +85,157 @@ struct ActivityView: View {
         }
     }
 
-    private var activePairCard: some View {
+    private var activePairPill: some View {
         Button {
             showActivePicker = true
         } label: {
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 if let pair = store.defaultPair {
                     let colorTag = ColorTag(rawValue: pair.colorTag) ?? .slate
-                    RoundedRectangle(cornerRadius: 12)
+                    Circle()
                         .fill(colorTag.color.gradient)
-                        .frame(width: 44, height: 44)
+                        .frame(width: 28, height: 28)
                         .overlay {
                             Image(systemName: pair.type.icon)
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.9))
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.white)
                         }
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 4) {
-                            Text("Active Pair")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.orange)
-                        }
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("WEARING NOW")
+                            .font(.system(size: 9, weight: .semibold))
+                            .tracking(1)
+                            .foregroundStyle(.tertiary)
                         Text(pair.name)
-                            .font(.headline)
+                            .font(.system(.subheadline, weight: .semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                     }
                 } else {
-                    ZStack {
-                        Circle()
-                            .fill(Color.primary.opacity(0.05))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: "shoe.2")
-                            .font(.system(size: 17))
-                            .foregroundStyle(.secondary)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("No Active Pair")
-                            .font(.headline)
+                    Image(systemName: "shoe.2")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 28, height: 28)
+                        .background(Circle().fill(Color.primary.opacity(0.06)))
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("NO ACTIVE PAIR")
+                            .font(.system(size: 9, weight: .semibold))
+                            .tracking(1)
+                            .foregroundStyle(.tertiary)
+                        Text("Tap to select")
+                            .font(.system(.subheadline, weight: .semibold))
                             .foregroundStyle(.primary)
-                        Text("Tap to choose which pair you're wearing")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                 }
 
                 Spacer(minLength: 0)
 
-                Text("Change")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.blue)
                 Image(systemName: "chevron.right")
-                    .font(.caption2)
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.tertiary)
             }
-            .padding(14)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(.rect(cornerRadius: 16))
-            .contentShape(Rectangle())
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background {
+                Capsule().fill(Color(.secondarySystemGroupedBackground))
+            }
+            .overlay {
+                Capsule().stroke(Color.primary.opacity(0.06), lineWidth: 0.5)
+            }
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.selection, trigger: showActivePicker)
     }
 
-    private var todayCard: some View {
-        VStack(spacing: 16) {
+    private var todayHero: some View {
+        VStack(alignment: .leading, spacing: 18) {
             HStack {
-                Text("Today")
-                    .font(.headline)
+                Text("TODAY")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.2)
+                    .foregroundStyle(.tertiary)
                 Spacer()
+                Text(Date(), style: .date)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(todayDistance.formatted(.number.precision(.fractionLength(1))))
+                    .font(.system(size: 64, weight: .bold))
+                    .monospacedDigit()
+
+                Text("km")
+                    .font(.system(.title3, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 14) {
+                HStack(spacing: 4) {
+                    Image(systemName: "figure.walk")
+                        .font(.system(size: 11, weight: .semibold))
+                    Text("\(todaySteps.formatted()) steps")
+                        .font(.system(.subheadline, weight: .medium))
+                        .monospacedDigit()
+                }
+                .foregroundStyle(.secondary)
+
                 if let todayPair = todaySessions.first(where: { $0.footwearId != nil }),
                    let name = store.footwear.first(where: { $0.id == todayPair.footwearId })?.name {
+                    Text("·")
+                        .foregroundStyle(.quaternary)
                     HStack(spacing: 4) {
                         Image(systemName: "shoe.fill")
-                            .font(.caption2)
+                            .font(.system(size: 10))
                         Text(name)
-                            .font(.caption)
+                            .font(.system(.subheadline, weight: .medium))
+                            .lineLimit(1)
                     }
                     .foregroundStyle(.secondary)
                 }
-            }
 
-            HStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(todaySteps.formatted())
-                        .font(.system(.largeTitle, design: .default, weight: .bold))
-                        .monospacedDigit()
-                    Text("steps")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(todayDistance.formatted(.number.precision(.fractionLength(1))))
-                        .font(.system(.largeTitle, design: .default, weight: .bold))
-                        .monospacedDigit()
-                    Text("km walked")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Spacer(minLength: 0)
             }
         }
-        .padding(16)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(.rect(cornerRadius: 16))
     }
 
     private var weeklyChart: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("This Week")
-                    .font(.headline)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("THIS WEEK")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.2)
+                    .foregroundStyle(.tertiary)
                 Spacer()
                 let weekTotal = weeklyData.reduce(0.0) { $0 + $1.distance }
                 Text("\(weekTotal.formatted(.number.precision(.fractionLength(1)))) km")
-                    .font(.subheadline)
+                    .font(.system(.subheadline, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
 
-            HStack(alignment: .bottom, spacing: 6) {
+            HStack(alignment: .bottom, spacing: 8) {
                 ForEach(weeklyData, id: \.day) { entry in
                     let isToday = Calendar.current.isDateInToday(entry.date)
-                    VStack(spacing: 6) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(isToday ? Color.primary : Color.primary.opacity(0.15))
-                            .frame(height: max(4, 80 * (entry.distance / maxWeeklyDistance)))
-                            .frame(maxWidth: .infinity)
+                    VStack(spacing: 8) {
+                        ZStack(alignment: .bottom) {
+                            Capsule()
+                                .fill(Color.primary.opacity(0.06))
+                                .frame(height: 110)
+                            Capsule()
+                                .fill(isToday ? AnyShapeStyle(Color.primary) : AnyShapeStyle(Color.primary.opacity(0.35)))
+                                .frame(height: max(4, 110 * (entry.distance / maxWeeklyDistance)))
+                        }
+                        .frame(maxWidth: .infinity)
 
                         Text(entry.day)
-                            .font(.system(size: 10, weight: isToday ? .bold : .regular))
+                            .font(.system(size: 11, weight: isToday ? .bold : .medium))
                             .foregroundStyle(isToday ? .primary : .tertiary)
                     }
                 }
             }
-            .frame(height: 100)
         }
-        .padding(16)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(.rect(cornerRadius: 16))
     }
 
     private var unassignedSection: some View {
@@ -233,11 +246,13 @@ struct ActivityView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         HStack(spacing: 6) {
-                            Image(systemName: "questionmark.circle.fill")
-                                .foregroundStyle(.orange)
-                                .font(.subheadline)
-                            Text("Unassigned")
-                                .font(.headline)
+                            Circle()
+                                .fill(.orange)
+                                .frame(width: 6, height: 6)
+                            Text("UNASSIGNED")
+                                .font(.system(size: 11, weight: .semibold))
+                                .tracking(1.2)
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
                         if let defaultPair = store.defaultPair {
@@ -246,22 +261,24 @@ struct ActivityView: View {
                                     store.assignAllUnassigned(to: defaultPair.id)
                                 }
                             } label: {
-                                Text("Assign All")
-                                    .font(.caption.weight(.medium))
+                                Text("Assign all")
+                                    .font(.system(.caption, weight: .semibold))
+                                    .foregroundStyle(.blue)
                             }
                             .sensoryFeedback(.impact(weight: .light), trigger: store.unassignedSessions.count)
                         }
                     }
+                    .padding(.horizontal, 4)
 
                     VStack(spacing: 0) {
                         ForEach(unassigned.prefix(8)) { session in
                             Button {
                                 selectedSession = session
                             } label: {
-                                HStack {
+                                HStack(spacing: 12) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(session.date, style: .date)
-                                            .font(.subheadline)
+                                            .font(.system(.subheadline, weight: .medium))
                                         Text("\(session.steps.formatted()) steps · \(session.distanceKm.formatted(.number.precision(.fractionLength(1)))) km")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
@@ -271,7 +288,7 @@ struct ActivityView: View {
                                         .font(.caption2)
                                         .foregroundStyle(.quaternary)
                                 }
-                                .padding(.vertical, 10)
+                                .padding(.vertical, 12)
                                 .padding(.horizontal, 16)
                                 .contentShape(Rectangle())
                             }
@@ -283,7 +300,7 @@ struct ActivityView: View {
                         }
                     }
                     .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(.rect(cornerRadius: 12))
+                    .clipShape(.rect(cornerRadius: 18))
                 }
             }
         }
@@ -291,8 +308,11 @@ struct ActivityView: View {
 
     private var recentActivitySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Recent")
-                .font(.headline)
+            Text("RECENT")
+                .font(.system(size: 11, weight: .semibold))
+                .tracking(1.2)
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 4)
 
             let recent = store.sessions
                 .filter { $0.isAssigned }
@@ -311,7 +331,7 @@ struct ActivityView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
                 .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(.rect(cornerRadius: 12))
+                .clipShape(.rect(cornerRadius: 18))
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(recent)) { session in
@@ -325,18 +345,18 @@ struct ActivityView: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(session.date, style: .date)
-                                    .font(.subheadline)
+                                    .font(.system(.subheadline, weight: .medium))
                                 Text(footwear?.name ?? "Unknown")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
                             Text("\(session.distanceKm.formatted(.number.precision(.fractionLength(1)))) km")
-                                .font(.subheadline.weight(.medium))
+                                .font(.system(.subheadline, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 12)
                         .padding(.horizontal, 16)
 
                         if session.id != recent.last?.id {
@@ -345,7 +365,7 @@ struct ActivityView: View {
                     }
                 }
                 .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(.rect(cornerRadius: 12))
+                .clipShape(.rect(cornerRadius: 18))
             }
         }
     }

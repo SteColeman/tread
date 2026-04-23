@@ -16,109 +16,126 @@ struct FootwearCard: View {
         store.lifecyclePercentage(for: item)
     }
 
-    private var latestCondition: ConditionLog? {
-        store.latestCondition(for: item.id)
-    }
-
     private var daysSinceLastWorn: Int? {
         guard let lastSession = store.sessionsForFootwear(item.id).first else { return nil }
         return Calendar.current.dateComponents([.day], from: lastSession.date, to: Date()).day
     }
 
+    private var wornLabel: String {
+        guard let days = daysSinceLastWorn else { return "Not worn yet" }
+        if days == 0 { return "Worn today" }
+        if days == 1 { return "Yesterday" }
+        if days < 7 { return "\(days)d ago" }
+        if days < 30 { return "\(days / 7)w ago" }
+        return "\(days / 30)mo ago"
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 14) {
-                colorBadge
+        HStack(spacing: 16) {
+            accentRail
 
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(item.name)
-                            .font(.headline)
-                            .lineLimit(1)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(item.name)
+                        .font(.system(.body, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
 
-                        if item.isDefault {
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.orange)
-                        }
-
-                        if item.status == .retired {
-                            Text("RETIRED")
-                                .font(.system(size: 9, weight: .bold))
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
-                                .background(Color.primary.opacity(0.06))
-                                .clipShape(Capsule())
-                                .foregroundStyle(.tertiary)
-                        }
+                    if item.isDefault {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.orange)
                     }
 
-                    HStack(spacing: 6) {
-                        if !item.brand.isEmpty {
-                            Text(item.brand)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text(item.type.rawValue)
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
+                    Spacer(minLength: 0)
 
-                Spacer(minLength: 0)
-
-                VStack(alignment: .trailing, spacing: 2) {
                     Text(distance.formatted(.number.precision(.fractionLength(1))))
-                        .font(.system(.title3, design: .default, weight: .bold))
+                        .font(.system(.title3, weight: .bold))
                         .monospacedDigit()
-                    Text("km")
-                        .font(.caption2)
+                        .foregroundStyle(.primary)
+                        + Text(" km")
+                        .font(.system(.caption, weight: .medium))
                         .foregroundStyle(.tertiary)
                 }
-            }
 
-            HStack(spacing: 12) {
-                lifecycleBar
-                    .frame(maxWidth: .infinity)
+                HStack(spacing: 6) {
+                    Image(systemName: item.type.icon)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(colorTag.color)
+                    Text(item.type.rawValue.uppercased())
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(0.8)
+                        .foregroundStyle(.secondary)
 
-                if let days = daysSinceLastWorn {
-                    Text(days == 0 ? "Worn today" : days == 1 ? "1 day ago" : "\(days)d ago")
-                        .font(.caption2)
+                    if !item.brand.isEmpty {
+                        Text("·")
+                            .font(.caption2)
+                            .foregroundStyle(.quaternary)
+                        Text(item.brand)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    if item.status == .retired {
+                        Text("·")
+                            .font(.caption2)
+                            .foregroundStyle(.quaternary)
+                        Text("RETIRED")
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(0.6)
+                            .foregroundStyle(.tertiary)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+
+                HStack(spacing: 10) {
+                    lifecycleBar
+                        .frame(maxWidth: .infinity)
+                    Text(wornLabel)
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.tertiary)
                         .fixedSize()
                 }
             }
-            .padding(.top, 10)
         }
-        .padding(14)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 16)
         .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(.rect(cornerRadius: 14))
+        .clipShape(.rect(cornerRadius: 20))
     }
 
-    private var colorBadge: some View {
-        RoundedRectangle(cornerRadius: 12)
+    private var accentRail: some View {
+        RoundedRectangle(cornerRadius: 3)
             .fill(colorTag.color.gradient)
-            .frame(width: 46, height: 46)
-            .overlay {
+            .frame(width: 4)
+            .frame(maxHeight: .infinity)
+            .overlay(alignment: .center) {
                 Image(systemName: item.type.icon)
-                    .font(.system(size: 19, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.white)
+                    .padding(10)
+                    .background(
+                        Circle().fill(colorTag.color.gradient)
+                    )
             }
+            .frame(width: 36)
     }
 
     private var lifecycleBar: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.primary.opacity(0.05))
-                    .frame(height: 5)
+                    .fill(Color.primary.opacity(0.06))
+                    .frame(height: 3)
 
                 Capsule()
                     .fill(lifecycleBarColor.gradient)
-                    .frame(width: max(5, geo.size.width * lifecyclePercent), height: 5)
+                    .frame(width: max(3, geo.size.width * lifecyclePercent), height: 3)
             }
         }
-        .frame(height: 5)
+        .frame(height: 3)
     }
 
     private var lifecycleBarColor: Color {

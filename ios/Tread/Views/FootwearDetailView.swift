@@ -111,63 +111,69 @@ struct FootwearDetailView: View {
     }
 
     private var heroSection: some View {
-        VStack(spacing: 0) {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(
-                    LinearGradient(
-                        colors: [colorTag.color, colorTag.color.opacity(0.7)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+        VStack(alignment: .leading, spacing: 18) {
+            ZStack {
+                LinearGradient(
+                    colors: [colorTag.color, colorTag.color.opacity(0.65)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
-                .frame(height: 140)
-                .overlay {
-                    VStack(spacing: 8) {
-                        Image(systemName: currentItem.type.icon)
-                            .font(.system(size: 40, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.9))
 
-                        HStack(spacing: 8) {
-                            if currentItem.isDefault {
-                                HStack(spacing: 3) {
-                                    Image(systemName: "star.fill")
-                                        .font(.system(size: 9))
-                                    Text("Default")
-                                        .font(.caption2.weight(.semibold))
-                                }
-                                .foregroundStyle(.white.opacity(0.8))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(.white.opacity(0.2))
-                                .clipShape(Capsule())
+                Image(systemName: currentItem.type.icon)
+                    .font(.system(size: 120, weight: .light))
+                    .foregroundStyle(.white.opacity(0.18))
+                    .offset(x: 90, y: 30)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 6) {
+                        if currentItem.isDefault {
+                            HStack(spacing: 3) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 9))
+                                Text("ACTIVE")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .tracking(0.8)
                             }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.white.opacity(0.22))
+                            .clipShape(Capsule())
+                        }
 
-                            Text(currentItem.status.rawValue)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(.white.opacity(0.8))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(.white.opacity(0.15))
-                                .clipShape(Capsule())
+                        Text(currentItem.status.rawValue.uppercased())
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(0.8)
+                            .foregroundStyle(.white.opacity(0.9))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.white.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+
+                    Spacer(minLength: 0)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(currentItem.type.rawValue.uppercased())
+                            .font(.system(size: 10, weight: .semibold))
+                            .tracking(1.2)
+                            .foregroundStyle(.white.opacity(0.75))
+                        Text(currentItem.name)
+                            .font(.system(.title, weight: .bold))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                        if !currentItem.brand.isEmpty {
+                            Text(currentItem.brand)
+                                .font(.system(.subheadline, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.85))
                         }
                     }
                 }
-
-            HStack(spacing: 4) {
-                if !currentItem.brand.isEmpty {
-                    Text(currentItem.brand)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                if !currentItem.brand.isEmpty {
-                    Text("·")
-                        .foregroundStyle(.quaternary)
-                }
-                Text(currentItem.type.rawValue)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                .padding(18)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .padding(.top, 12)
+            .frame(height: 190)
+            .clipShape(.rect(cornerRadius: 24))
         }
     }
 
