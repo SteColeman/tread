@@ -3,13 +3,99 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(HealthKitService.self) private var healthKit
     @Environment(FootwearStore.self) private var store
+    @Environment(AuthService.self) private var auth
     @AppStorage("defaultLifespan") private var defaultLifespan: Double = 800
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @State private var showResetAlert = false
+    @State private var showSignIn = false
+    @State private var showSignOutAlert = false
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    if auth.isSignedIn {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(.green)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(auth.displayName ?? auth.email ?? "Signed in")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    Text("Synced across devices")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+
+                        if store.isSyncing {
+                            HStack {
+                                ProgressView().controlSize(.small)
+                                Text("Syncing…")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else if let last = store.lastSyncedAt {
+                            HStack {
+                                Text("Last synced")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text(last, style: .relative)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        if let error = store.syncError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+
+                        Button("Sign Out", role: .destructive) {
+                            showSignOutAlert = true
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Sync your rotation")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("Sign in to keep your footwear, sessions, and condition logs across devices.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+
+                        Button {
+                            showSignIn = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "applelogo")
+                                Text("Sign in with Apple")
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .disabled(!auth.isAvailable)
+
+                        if !auth.isAvailable {
+                            Text("Sync isn't configured for this build.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Account")
+                }
+
                 Section("Health") {
                     HStack {
                         Label("HealthKit", systemImage: "heart.fill")
@@ -103,18 +189,27 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .sheet(isPresented: $showSignIn) {
+                SignInView()
+                    .environment(auth)
+            }
             .alert("Reset All Data?", isPresented: $showResetAlert) {
                 Button("Reset", role: .destructive) {
-                    store.footwear = []
-                    store.sessions = []
-                    store.conditionLogs = []
-                    PersistenceService.shared.saveFootwear([])
-                    PersistenceService.shared.saveSessions([])
-                    PersistenceService.shared.saveConditionLogs([])
+                    Task {
+                        await store.clearLocalAndRemote()
+                    }
                 }
                 Button("Cancel", role: .cancel) { }
             } message: {
-                Text("This permanently removes all footwear, sessions, and condition logs.")
+                Text("This permanently removes all footwear, sessions, and condition logs\(auth.isSignedIn ? " from your account on all devices" : "").")
+            }
+            .alert("Sign Out?", isPresented: $showSignOutAlert) {
+                Button("Sign Out", role: .destructive) {
+                    Task { await auth.signOut() }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Your data stays on this device. Sign back in to resume sync.")
             }
         }
     }
