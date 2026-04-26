@@ -30,9 +30,13 @@ struct FootwearCard: View {
         return "\(days / 30)mo ago"
     }
 
+    private var photo: UIImage? {
+        PhotoStorageService.shared.load(item.photoFilename)
+    }
+
     var body: some View {
-        HStack(spacing: 16) {
-            accentRail
+        HStack(spacing: 14) {
+            thumbnail
 
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -77,6 +81,16 @@ struct FootwearCard: View {
                             .lineLimit(1)
                     }
 
+                    if !item.colorway.isEmpty {
+                        Text("·")
+                            .font(.caption2)
+                            .foregroundStyle(.quaternary)
+                        Text(item.colorway)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                    }
+
                     if item.status == .retired {
                         Text("·")
                             .font(.caption2)
@@ -106,21 +120,29 @@ struct FootwearCard: View {
         .clipShape(.rect(cornerRadius: 20))
     }
 
-    private var accentRail: some View {
-        RoundedRectangle(cornerRadius: 3)
-            .fill(colorTag.color.gradient)
-            .frame(width: 4)
-            .frame(maxHeight: .infinity)
-            .overlay(alignment: .center) {
-                Image(systemName: item.type.icon)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(
-                        Circle().fill(colorTag.color.gradient)
-                    )
+    private var thumbnail: some View {
+        Group {
+            if let photo {
+                Color(.tertiarySystemFill)
+                    .frame(width: 56, height: 56)
+                    .overlay {
+                        Image(uiImage: photo)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .allowsHitTesting(false)
+                    }
+                    .clipShape(.rect(cornerRadius: 12))
+            } else {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(colorTag.color.gradient)
+                    .frame(width: 56, height: 56)
+                    .overlay {
+                        Image(systemName: item.type.icon)
+                            .font(.system(size: 22, weight: .medium))
+                            .foregroundStyle(.white)
+                    }
             }
-            .frame(width: 36)
+        }
     }
 
     private var lifecycleBar: some View {

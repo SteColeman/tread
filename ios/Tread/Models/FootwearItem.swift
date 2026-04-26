@@ -38,6 +38,7 @@ nonisolated struct FootwearItem: Identifiable, Codable, Sendable, Hashable {
     let id: UUID
     var name: String
     var brand: String
+    var colorway: String
     var type: FootwearType
     var dateAdded: Date
     var datePurchased: Date?
@@ -46,11 +47,14 @@ nonisolated struct FootwearItem: Identifiable, Codable, Sendable, Hashable {
     var expectedLifespanKm: Double
     var notes: String
     var colorTag: String
+    var photoFilename: String?
+    var receiptPhotoFilename: String?
 
     init(
         id: UUID = UUID(),
         name: String,
         brand: String = "",
+        colorway: String = "",
         type: FootwearType = .casual,
         dateAdded: Date = Date(),
         datePurchased: Date? = nil,
@@ -58,11 +62,14 @@ nonisolated struct FootwearItem: Identifiable, Codable, Sendable, Hashable {
         isDefault: Bool = false,
         expectedLifespanKm: Double = 800,
         notes: String = "",
-        colorTag: String = "slate"
+        colorTag: String = "slate",
+        photoFilename: String? = nil,
+        receiptPhotoFilename: String? = nil
     ) {
         self.id = id
         self.name = name
         self.brand = brand
+        self.colorway = colorway
         self.type = type
         self.dateAdded = dateAdded
         self.datePurchased = datePurchased
@@ -71,5 +78,29 @@ nonisolated struct FootwearItem: Identifiable, Codable, Sendable, Hashable {
         self.expectedLifespanKm = expectedLifespanKm
         self.notes = notes
         self.colorTag = colorTag
+        self.photoFilename = photoFilename
+        self.receiptPhotoFilename = receiptPhotoFilename
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, brand, colorway, type, dateAdded, datePurchased, status, isDefault, expectedLifespanKm, notes, colorTag, photoFilename, receiptPhotoFilename
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(UUID.self, forKey: .id)
+        self.name = try c.decode(String.self, forKey: .name)
+        self.brand = try c.decodeIfPresent(String.self, forKey: .brand) ?? ""
+        self.colorway = try c.decodeIfPresent(String.self, forKey: .colorway) ?? ""
+        self.type = try c.decode(FootwearType.self, forKey: .type)
+        self.dateAdded = try c.decode(Date.self, forKey: .dateAdded)
+        self.datePurchased = try c.decodeIfPresent(Date.self, forKey: .datePurchased)
+        self.status = try c.decode(FootwearStatus.self, forKey: .status)
+        self.isDefault = try c.decodeIfPresent(Bool.self, forKey: .isDefault) ?? false
+        self.expectedLifespanKm = try c.decodeIfPresent(Double.self, forKey: .expectedLifespanKm) ?? 800
+        self.notes = try c.decodeIfPresent(String.self, forKey: .notes) ?? ""
+        self.colorTag = try c.decodeIfPresent(String.self, forKey: .colorTag) ?? "slate"
+        self.photoFilename = try c.decodeIfPresent(String.self, forKey: .photoFilename)
+        self.receiptPhotoFilename = try c.decodeIfPresent(String.self, forKey: .receiptPhotoFilename)
     }
 }

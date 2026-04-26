@@ -6,6 +6,7 @@ struct AddFootwearView: View {
 
     @State private var name = ""
     @State private var brand = ""
+    @State private var colorway = ""
     @State private var type: FootwearType = .casual
     @State private var isDefault = false
     @State private var expectedLifespan: Double = 800
@@ -13,14 +14,28 @@ struct AddFootwearView: View {
     @State private var hasPurchaseDate = false
     @State private var notes = ""
     @State private var selectedColor: ColorTag = .slate
+    @State private var photo: UIImage?
+    @State private var receiptPhoto: UIImage?
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
+                    PhotoPickerTile(
+                        title: "Add Photo",
+                        subtitle: "Choose from library",
+                        icon: "shoe.2",
+                        image: $photo
+                    )
+                    .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                    .listRowBackground(Color.clear)
+                }
+
+                Section {
                     TextField("Name", text: $name)
                         .textContentType(.name)
                     TextField("Brand (optional)", text: $brand)
+                    TextField("Colorway, e.g. Triple Black", text: $colorway)
                 }
 
                 Section("Type") {
@@ -33,7 +48,7 @@ struct AddFootwearView: View {
                     .pickerStyle(.navigationLink)
                 }
 
-                Section("Color") {
+                Section("Color Tag") {
                     colorPicker
                 }
 
@@ -52,12 +67,24 @@ struct AddFootwearView: View {
                     }
                 }
 
-                Section {
-                    Toggle("Set as Default Pair", isOn: $isDefault)
+                Section("Purchase") {
                     Toggle("Purchase Date", isOn: $hasPurchaseDate.animation(.snappy))
                     if hasPurchaseDate {
                         DatePicker("Purchased", selection: $datePurchased, in: ...Date(), displayedComponents: .date)
                     }
+                    PhotoPickerTile(
+                        title: "Add Receipt",
+                        subtitle: "Keep for warranty claims",
+                        icon: "doc.text.viewfinder",
+                        image: $receiptPhoto,
+                        aspectRatio: 3.0 / 4.0
+                    )
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.clear)
+                }
+
+                Section {
+                    Toggle("Set as Active Pair", isOn: $isDefault)
                 }
 
                 Section {
@@ -72,25 +99,33 @@ struct AddFootwearView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        let item = FootwearItem(
-                            name: name.trimmingCharacters(in: .whitespaces),
-                            brand: brand.trimmingCharacters(in: .whitespaces),
-                            type: type,
-                            datePurchased: hasPurchaseDate ? datePurchased : nil,
-                            isDefault: isDefault,
-                            expectedLifespanKm: expectedLifespan,
-                            notes: notes.trimmingCharacters(in: .whitespaces),
-                            colorTag: selectedColor.rawValue
-                        )
-                        store.addFootwear(item)
-                        dismiss()
-                    }
+                    Button("Add") { saveItem() }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                     .fontWeight(.semibold)
                 }
             }
         }
+    }
+
+    private func saveItem() {
+        let photoFilename = photo.flatMap { PhotoStorageService.shared.save($0) }
+        let receiptFilename = receiptPhoto.flatMap { PhotoStorageService.shared.save($0, maxDimension: 2200) }
+
+        let item = FootwearItem(
+            name: name.trimmingCharacters(in: .whitespaces),
+            brand: brand.trimmingCharacters(in: .whitespaces),
+            colorway: colorway.trimmingCharacters(in: .whitespaces),
+            type: type,
+            datePurchased: hasPurchaseDate ? datePurchased : nil,
+            isDefault: isDefault,
+            expectedLifespanKm: expectedLifespan,
+            notes: notes.trimmingCharacters(in: .whitespaces),
+            colorTag: selectedColor.rawValue,
+            photoFilename: photoFilename,
+            receiptPhotoFilename: receiptFilename
+        )
+        store.addFootwear(item)
+        dismiss()
     }
 
     private var lifespanHint: String {

@@ -6,6 +6,7 @@ nonisolated struct FootwearRow: Codable, Sendable {
     let user_id: UUID
     let name: String
     let brand: String
+    let colorway: String?
     let type: String
     let date_added: Date
     let date_purchased: Date?
@@ -14,12 +15,15 @@ nonisolated struct FootwearRow: Codable, Sendable {
     let expected_lifespan_km: Double
     let notes: String
     let color_tag: String
+    let photo_filename: String?
+    let receipt_photo_filename: String?
 
     init(item: FootwearItem, userId: UUID) {
         self.id = item.id
         self.user_id = userId
         self.name = item.name
         self.brand = item.brand
+        self.colorway = item.colorway
         self.type = item.type.rawValue
         self.date_added = item.dateAdded
         self.date_purchased = item.datePurchased
@@ -28,6 +32,8 @@ nonisolated struct FootwearRow: Codable, Sendable {
         self.expected_lifespan_km = item.expectedLifespanKm
         self.notes = item.notes
         self.color_tag = item.colorTag
+        self.photo_filename = item.photoFilename
+        self.receipt_photo_filename = item.receiptPhotoFilename
     }
 
     func toModel() -> FootwearItem {
@@ -35,6 +41,7 @@ nonisolated struct FootwearRow: Codable, Sendable {
             id: id,
             name: name,
             brand: brand,
+            colorway: colorway ?? "",
             type: FootwearType(rawValue: type) ?? .casual,
             dateAdded: date_added,
             datePurchased: date_purchased,
@@ -42,7 +49,9 @@ nonisolated struct FootwearRow: Codable, Sendable {
             isDefault: is_default,
             expectedLifespanKm: expected_lifespan_km,
             notes: notes,
-            colorTag: color_tag
+            colorTag: color_tag,
+            photoFilename: photo_filename,
+            receiptPhotoFilename: receipt_photo_filename
         )
     }
 }

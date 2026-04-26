@@ -8,6 +8,8 @@ struct FootwearDetailView: View {
     @State private var showEditSheet = false
     @State private var showRetireAlert = false
     @State private var showDeleteAlert = false
+    @State private var showPhotoViewer = false
+    @State private var showReceiptViewer = false
 
     private var colorTag: ColorTag {
         ColorTag(rawValue: currentItem.colorTag) ?? .slate
@@ -93,6 +95,16 @@ struct FootwearDetailView: View {
         .sheet(isPresented: $showEditSheet) {
             EditFootwearView(item: currentItem)
         }
+        .sheet(isPresented: $showPhotoViewer) {
+            if let photo {
+                PhotoViewer(image: photo, title: currentItem.name)
+            }
+        }
+        .sheet(isPresented: $showReceiptViewer) {
+            if let receiptPhoto {
+                PhotoViewer(image: receiptPhoto, title: "Receipt")
+            }
+        }
         .alert("Retire this pair?", isPresented: $showRetireAlert) {
             Button("Retire", role: .destructive) { store.retireFootwear(currentItem) }
             Button("Cancel", role: .cancel) { }
@@ -110,19 +122,45 @@ struct FootwearDetailView: View {
         }
     }
 
+    private var photo: UIImage? {
+        PhotoStorageService.shared.load(currentItem.photoFilename)
+    }
+
+    private var receiptPhoto: UIImage? {
+        PhotoStorageService.shared.load(currentItem.receiptPhotoFilename)
+    }
+
     private var heroSection: some View {
         VStack(alignment: .leading, spacing: 18) {
             ZStack {
-                LinearGradient(
-                    colors: [colorTag.color, colorTag.color.opacity(0.65)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                if let photo {
+                    LinearGradient(
+                        colors: [colorTag.color.opacity(0.4), colorTag.color.opacity(0.2)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    Image(uiImage: photo)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .allowsHitTesting(false)
+                    LinearGradient(
+                        colors: [.black.opacity(0.0), .black.opacity(0.55)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .allowsHitTesting(false)
+                } else {
+                    LinearGradient(
+                        colors: [colorTag.color, colorTag.color.opacity(0.65)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
 
-                Image(systemName: currentItem.type.icon)
-                    .font(.system(size: 120, weight: .light))
-                    .foregroundStyle(.white.opacity(0.18))
-                    .offset(x: 90, y: 30)
+                    Image(systemName: currentItem.type.icon)
+                        .font(.system(size: 120, weight: .light))
+                        .foregroundStyle(.white.opacity(0.18))
+                        .offset(x: 90, y: 30)
+                }
 
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 6) {
@@ -162,18 +200,34 @@ struct FootwearDetailView: View {
                             .font(.system(.title, weight: .bold))
                             .foregroundStyle(.white)
                             .lineLimit(2)
-                        if !currentItem.brand.isEmpty {
-                            Text(currentItem.brand)
-                                .font(.system(.subheadline, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.85))
+                        if !currentItem.brand.isEmpty || !currentItem.colorway.isEmpty {
+                            HStack(spacing: 6) {
+                                if !currentItem.brand.isEmpty {
+                                    Text(currentItem.brand)
+                                        .font(.system(.subheadline, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.9))
+                                }
+                                if !currentItem.brand.isEmpty && !currentItem.colorway.isEmpty {
+                                    Text("·").foregroundStyle(.white.opacity(0.5))
+                                }
+                                if !currentItem.colorway.isEmpty {
+                                    Text(currentItem.colorway)
+                                        .font(.system(.subheadline))
+                                        .foregroundStyle(.white.opacity(0.8))
+                                }
+                            }
                         }
                     }
                 }
                 .padding(18)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
-            .frame(height: 190)
+            .frame(height: 230)
             .clipShape(.rect(cornerRadius: 24))
+            .contentShape(.rect(cornerRadius: 24))
+            .onTapGesture {
+                if photo != nil { showPhotoViewer = true }
+            }
         }
     }
 
@@ -398,8 +452,9 @@ struct FootwearDetailView: View {
         Group {
             let hasNotes = !currentItem.notes.isEmpty
             let hasPurchaseDate = currentItem.datePurchased != nil
+            let hasReceipt = receiptPhoto != nil
 
-            if hasNotes || hasPurchaseDate {
+            if hasNotes || hasPurchaseDate || hasReceipt {
                 VStack(spacing: 10) {
                     if hasNotes {
                         VStack(alignment: .leading, spacing: 6) {
@@ -431,6 +486,38 @@ struct FootwearDetailView: View {
                                 }
                             }
                         }
+                    }
+
+                    if let receipt = receiptPhoto {
+                        if hasNotes || hasPurchaseDate { Divider() }
+                        Button {
+                            showReceiptViewer = true
+                        } label: {
+                            HStack(spacing: 12) {
+                                Color(.tertiarySystemFill)
+                                    .frame(width: 38, height: 48)
+                                    .overlay {
+                                        Image(uiImage: receipt)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .allowsHitTesting(false)
+                                    }
+                                    .clipShape(.rect(cornerRadius: 6))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Receipt")
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(.primary)
+                                    Text("Tap to view")
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(16)
