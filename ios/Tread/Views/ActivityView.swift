@@ -78,9 +78,10 @@ struct ActivityView: View {
                 ActivePairPickerView()
             }
             .task {
-                if store.sessions.isEmpty {
-                    await syncHealthKit()
-                }
+                await syncHealthKit()
+            }
+            .onChange(of: store.defaultPair?.id) { _, _ in
+                Task { await syncHealthKit() }
             }
         }
     }

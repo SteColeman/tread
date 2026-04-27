@@ -131,8 +131,22 @@ class FootwearStore {
         if footwear[index].status == .retired {
             footwear[index].status = .active
         }
+        let activeId = footwear[index].id
+
+        var changedSessions: [WearSession] = []
+        let calendar = Calendar.current
+        for i in sessions.indices {
+            if sessions[i].footwearId == nil && calendar.isDateInToday(sessions[i].date) {
+                sessions[i].footwearId = activeId
+                changedSessions.append(sessions[i])
+            }
+        }
+
         save()
         pushFootwearRemote(footwear)
+        if !changedSessions.isEmpty {
+            pushSessionsRemote(changedSessions)
+        }
     }
 
     func clearDefault() {
@@ -234,30 +248,51 @@ class FootwearStore {
 
     func importHealthKitData(_ dailyData: [(date: Date, steps: Int, distanceKm: Double)]) {
         let calendar = Calendar.current
-        var newSessions: [WearSession] = []
-        for day in dailyData {
-            let dayStart = calendar.startOfDay(for: day.date)
-            let alreadyExists = sessions.contains { calendar.isDate($0.date, inSameDayAs: dayStart) && !$0.isManual }
-            guard !alreadyExists, day.steps > 0 else { continue }
+        var changed: [WearSession] = []
 
-            let session = WearSession(
-                date: dayStart,
-                steps: day.steps,
-                distanceKm: day.distanceKm
-            )
-            sessions.append(session)
-            newSessions.append(session)
+        for day in dailyData {
+            guard day.steps > 0 else { continue }
+            let dayStart = calendar.startOfDay(for: day.date)
+
+            if let existingIndex = sessions.firstIndex(where: {
+                !$0.isManual && calendar.isDate($0.date, inSameDayAs: dayStart)
+            }) {
+                let current = sessions[existingIndex]
+                if current.steps != day.steps || abs(current.distanceKm - day.distanceKm) > 0.001 {
+                    sessions[existingIndex].steps = day.steps
+                    sessions[existingIndex].distanceKm = day.distanceKm
+                    if sessions[existingIndex].footwearId == nil, let defaultItem = defaultPair {
+                        sessions[existingIndex].footwearId = defaultItem.id
+                    }
+                    changed.append(sessions[existingIndex])
+                } else if sessions[existingIndex].footwearId == nil, let defaultItem = defaultPair {
+                    sessions[existingIndex].footwearId = defaultItem.id
+                    changed.append(sessions[existingIndex])
+                }
+            } else {
+                var session = WearSession(
+                    date: dayStart,
+                    steps: day.steps,
+                    distanceKm: day.distanceKm
+                )
+                if let defaultItem = defaultPair {
+                    session.footwearId = defaultItem.id
+                }
+                sessions.append(session)
+                changed.append(session)
+            }
         }
 
         if let defaultItem = defaultPair {
-            for i in sessions.indices where sessions[i].footwearId == nil {
+            for i in sessions.indices where sessions[i].footwearId == nil && calendar.isDateInToday(sessions[i].date) {
                 sessions[i].footwearId = defaultItem.id
+                changed.append(sessions[i])
             }
         }
 
         save()
-        if !newSessions.isEmpty {
-            pushSessionsRemote(sessions)
+        if !changed.isEmpty {
+            pushSessionsRemote(changed)
         }
     }
 
