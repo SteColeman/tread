@@ -30,4 +30,19 @@ nonisolated enum ColorTag: String, CaseIterable, Sendable, Identifiable {
     }
 
     var label: String { rawValue.capitalized }
+
+    var hex: String {
+        switch self {
+        case .slate: return "#6B7380"
+        case .stone: return "#8C8780"
+        case .ember: return "#C2614D"
+        case .moss: return "#668C66"
+        case .ocean: return "#4D80A6"
+        case .dusk: return "#8C669A"
+        case .sand: return "#B8A685"
+        case .cedar: return "#945C47"
+        case .iron: return "#5A5C61"
+        case .clay: return "#AD7B61"
+        }
+    }
 }

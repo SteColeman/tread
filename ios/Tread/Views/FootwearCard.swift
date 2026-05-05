@@ -16,6 +16,10 @@ struct FootwearCard: View {
         store.lifecyclePercentage(for: item)
     }
 
+    private var remainingKm: Double {
+        store.lifeRemainingKm(for: item)
+    }
+
     private var daysSinceLastWorn: Int? {
         guard let lastSession = store.sessionsForFootwear(item.id).first else { return nil }
         return Calendar.current.dateComponents([.day], from: lastSession.date, to: Date()).day
@@ -107,6 +111,11 @@ struct FootwearCard: View {
                 HStack(spacing: 10) {
                     lifecycleBar
                         .frame(maxWidth: .infinity)
+                    Text(remainingLabel)
+                        .font(.system(size: 11, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(remainingColor)
+                        .fixedSize()
                     Text(wornLabel)
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.tertiary)
@@ -164,5 +173,19 @@ struct FootwearCard: View {
         if lifecyclePercent >= 0.9 { return .red }
         if lifecyclePercent >= 0.7 { return .orange }
         return colorTag.color
+    }
+
+    private var remainingLabel: String {
+        if remainingKm <= 0 { return "Goal reached" }
+        if remainingKm >= 1000 {
+            return "\((remainingKm / 1000).formatted(.number.precision(.fractionLength(1))))k km left"
+        }
+        return "\(Int(remainingKm)) km left"
+    }
+
+    private var remainingColor: Color {
+        if lifecyclePercent >= 1.0 { return .red }
+        if lifecyclePercent >= 0.8 { return .orange }
+        return .secondary
     }
 }

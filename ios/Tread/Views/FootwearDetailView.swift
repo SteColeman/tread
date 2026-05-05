@@ -35,6 +35,14 @@ struct FootwearDetailView: View {
         store.lifecyclePercentage(for: currentItem)
     }
 
+    private var remainingKm: Double {
+        store.lifeRemainingKm(for: currentItem)
+    }
+
+    private var goalPreset: ReplacementGoalPreset {
+        ReplacementGoalPreset.bestMatch(forKm: currentItem.expectedLifespanKm)
+    }
+
     private var latestCondition: ConditionLog? {
         store.latestCondition(for: item.id)
     }
@@ -257,50 +265,57 @@ struct FootwearDetailView: View {
 
     private var lifecycleSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Lifecycle")
-                .font(.headline)
-
-            VStack(spacing: 10) {
-                HStack {
-                    Text("\(Int(lifecyclePercent * 100))%")
-                        .font(.system(.title2, design: .default, weight: .bold))
-                        .monospacedDigit()
-                    Text("of estimated lifespan")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Spacer()
+            HStack(alignment: .firstTextBaseline) {
+                Text("Replacement Goal")
+                    .font(.headline)
+                Spacer()
+                HStack(spacing: 4) {
+                    Image(systemName: goalPreset.icon)
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(goalPreset.label)
+                        .font(.caption.weight(.semibold))
                 }
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.primary.opacity(0.05))
+                .clipShape(Capsule())
+            }
 
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.primary.opacity(0.06))
-                        Capsule()
-                            .fill(lifecycleBarColor.gradient)
-                            .frame(width: max(6, geo.size.width * lifecyclePercent))
+            VStack(spacing: 14) {
+                HStack(alignment: .center, spacing: 16) {
+                    LifecycleRing(percent: lifecyclePercent, color: lifecycleBarColor)
+                        .frame(width: 76, height: 76)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text(remainingKm > 0
+                                 ? "\(Int(remainingKm))"
+                                 : "0")
+                                .font(.system(size: 30, weight: .bold))
+                                .monospacedDigit()
+                            Text("km left")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("\(Int(distance)) of \(Int(currentItem.expectedLifespanKm)) km used")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
-                }
-                .frame(height: 10)
-
-                HStack {
-                    Text("\(distance.formatted(.number.precision(.fractionLength(0)))) km used")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text("\(currentItem.expectedLifespanKm.formatted(.number.precision(.fractionLength(0)))) km expected")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                    Spacer(minLength: 0)
                 }
 
                 if lifecyclePercent >= 0.8 {
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(.caption)
-                        Text("This pair is nearing its estimated retirement point.")
+                        Text(lifecyclePercent >= 1.0
+                             ? "You've passed this pair's replacement goal."
+                             : "Nearing the replacement goal — start thinking about a new pair.")
                             .font(.caption)
                     }
-                    .foregroundStyle(.orange)
-                    .padding(.top, 2)
+                    .foregroundStyle(lifecyclePercent >= 1.0 ? .red : .orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(16)
@@ -523,6 +538,31 @@ struct FootwearDetailView: View {
                 .padding(16)
                 .background(Color(.secondarySystemGroupedBackground))
                 .clipShape(.rect(cornerRadius: 14))
+            }
+        }
+    }
+}
+
+struct LifecycleRing: View {
+    let percent: Double
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.primary.opacity(0.06), lineWidth: 8)
+            Circle()
+                .trim(from: 0, to: max(0.001, min(percent, 1.0)))
+                .stroke(color.gradient, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: percent)
+            VStack(spacing: 0) {
+                Text("\(Int(min(percent, 1.0) * 100))%")
+                    .font(.system(size: 17, weight: .bold))
+                    .monospacedDigit()
+                Text("used")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.tertiary)
             }
         }
     }

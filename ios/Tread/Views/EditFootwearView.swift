@@ -11,6 +11,7 @@ struct EditFootwearView: View {
     @State private var type: FootwearType
     @State private var isDefault: Bool
     @State private var expectedLifespan: Double
+    @State private var goalPreset: ReplacementGoalPreset
     @State private var datePurchased: Date
     @State private var hasPurchaseDate: Bool
     @State private var notes: String
@@ -28,6 +29,7 @@ struct EditFootwearView: View {
         _type = State(initialValue: item.type)
         _isDefault = State(initialValue: item.isDefault)
         _expectedLifespan = State(initialValue: item.expectedLifespanKm)
+        _goalPreset = State(initialValue: ReplacementGoalPreset.bestMatch(forKm: item.expectedLifespanKm))
         _datePurchased = State(initialValue: item.datePurchased ?? Date())
         _hasPurchaseDate = State(initialValue: item.datePurchased != nil)
         _notes = State(initialValue: item.notes)
@@ -106,16 +108,12 @@ struct EditFootwearView: View {
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 }
 
-                Section("Expected Lifespan") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("\(Int(expectedLifespan)) km")
-                                .font(.headline)
-                                .monospacedDigit()
-                            Spacer()
-                        }
-                        Slider(value: $expectedLifespan, in: 200...2000, step: 50)
-                    }
+                Section {
+                    GoalPresetPicker(selected: $goalPreset, expectedLifespan: $expectedLifespan)
+                } header: {
+                    Text("Replacement Goal")
+                } footer: {
+                    Text("We'll warn you as this pair approaches its goal.")
                 }
 
                 Section("Purchase") {

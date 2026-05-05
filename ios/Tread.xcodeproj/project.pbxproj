@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		XX50D61ED0BAE05FA2F8E9XX /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = XX1C9FF110ABBCE8BF456CXX /* Supabase */; };
+		XX85D8F8243189F59B4639XX /* TreadWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = XXEB9BFCFA9E952663619BXX /* TreadWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,13 +26,56 @@
 			remoteGlobalIDString = 105FC5792E9EAD3100EA8BCF;
 			remoteInfo = Tread;
 		};
+		XX4B1001C22B4B7391B49BXX /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 105FC5722E9EAD3100EA8BCF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = XX3D70F0D75BA8893960BFXX;
+			remoteInfo = TreadWidget;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		XXC4272701DDDAAF36C150XX /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				XX85D8F8243189F59B4639XX /* TreadWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		105FC57A2E9EAD3100EA8BCF /* Tread.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tread.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		105FC5892E9EAD3200EA8BCF /* TreadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TreadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		105FC5932E9EAD3200EA8BCF /* TreadUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TreadUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		XXEB9BFCFA9E952663619BXX /* TreadWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TreadWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		XX59D606B5D26E606BD08DXX /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = XX3D70F0D75BA8893960BFXX /* TreadWidget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		XX5596CEF176A62FF81C3BXX /* TreadWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TreadWidget;
+			sourceTree = "<group>";
+			exceptions = (
+				XX59D606B5D26E606BD08DXX /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		105FC5772E9EAD3100EA8BCF /* Frameworks */ = {
@@ -50,6 +94,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		105FC5902E9EAD3200EA8BCF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XX75B8358D2242CEB782C5XX /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -84,6 +135,7 @@
 				105FC58C2E9EAD3200EA8BCF /* TreadTests */,
 				105FC5962E9EAD3200EA8BCF /* TreadUITests */,
 				105FC57B2E9EAD3100EA8BCF /* Products */,
+				XX5596CEF176A62FF81C3BXX /* TreadWidget */,
 			);
 			sourceTree = "<group>";
 		};
@@ -93,6 +145,7 @@
 				105FC57A2E9EAD3100EA8BCF /* Tread.app */,
 				105FC5892E9EAD3200EA8BCF /* TreadTests.xctest */,
 				105FC5932E9EAD3200EA8BCF /* TreadUITests.xctest */,
+				XXEB9BFCFA9E952663619BXX /* TreadWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -107,10 +160,12 @@
 				105FC5762E9EAD3100EA8BCF /* Sources */,
 				105FC5772E9EAD3100EA8BCF /* Frameworks */,
 				105FC5782E9EAD3100EA8BCF /* Resources */,
+				XXC4272701DDDAAF36C150XX /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				XXAF4A3CE3683B889B3D2DXX /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				105FC57C2E9EAD3100EA8BCF /* Tread */,
@@ -169,6 +224,26 @@
 			productReference = 105FC5932E9EAD3200EA8BCF /* TreadUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		XX3D70F0D75BA8893960BFXX /* TreadWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = XXEE7E8E7A6EB15E95DB27XX /* Build configuration list for PBXNativeTarget "TreadWidget" */;
+			buildPhases = (
+				XXE0FD6AFA7551401BFCEBXX /* Sources */,
+				XX75B8358D2242CEB782C5XX /* Frameworks */,
+				XX8DEE49FEB104205DDA8DXX /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TreadWidget;
+			productName = TreadWidget;
+			productReference = XXEB9BFCFA9E952663619BXX /* TreadWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+			fileSystemSynchronizedGroups = (
+				XX5596CEF176A62FF81C3BXX /* TreadWidget */,
+			);
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -209,6 +284,7 @@
 				105FC5792E9EAD3100EA8BCF /* Tread */,
 				105FC5882E9EAD3200EA8BCF /* TreadTests */,
 				105FC5922E9EAD3200EA8BCF /* TreadUITests */,
+				XX3D70F0D75BA8893960BFXX /* TreadWidget */,
 			);
 			packageReferences = (
 				XX20EB7F6EA71E9F2E096CXX /* XCRemoteSwiftPackageReference "supabase-swift" */,
@@ -232,6 +308,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		105FC5912E9EAD3200EA8BCF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XX8DEE49FEB104205DDA8DXX /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -262,6 +345,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XXE0FD6AFA7551401BFCEBXX /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -274,6 +364,11 @@
 			isa = PBXTargetDependency;
 			target = 105FC5792E9EAD3100EA8BCF /* Tread */;
 			targetProxy = 105FC5942E9EAD3200EA8BCF /* PBXContainerItemProxy */;
+		};
+		XXAF4A3CE3683B889B3D2DXX /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = XX3D70F0D75BA8893960BFXX /* TreadWidget */;
+			targetProxy = XX4B1001C22B4B7391B49BXX /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -557,6 +652,52 @@
 			};
 			name = Release;
 		};
+		XXBA493788A1F0114AF401XX /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TreadWidget/TreadWidget.entitlements;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.xjflp89i7jiplm22eucmj.treadwidget;
+				PRODUCT_NAME = TreadWidget;
+				SWIFT_VERSION = 5.0;
+				SDKROOT = iphoneos;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TreadWidget/Info.plist;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";
+			};
+			name = Release;
+		};
+		XXD742EA1D047914EED43DXX /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = TreadWidget/TreadWidget.entitlements;
+				PRODUCT_BUNDLE_IDENTIFIER = app.rork.xjflp89i7jiplm22eucmj.treadwidget;
+				PRODUCT_NAME = TreadWidget;
+				SWIFT_VERSION = 5.0;
+				SDKROOT = iphoneos;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TreadWidget/Info.plist;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				MARKETING_VERSION = 1.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				INFOPLIST_KEY_CFBundleDisplayName = "$(PRODUCT_NAME)";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -592,6 +733,15 @@
 			buildConfigurations = (
 				105FC5A42E9EAD3200EA8BCF /* Debug */,
 				105FC5A52E9EAD3200EA8BCF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		XXEE7E8E7A6EB15E95DB27XX /* Build configuration list for PBXNativeTarget "TreadWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XXD742EA1D047914EED43DXX /* Debug */,
+				XXBA493788A1F0114AF401XX /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

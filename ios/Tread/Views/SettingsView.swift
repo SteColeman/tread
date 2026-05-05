@@ -130,6 +130,19 @@ struct SettingsView: View {
                     }
                 }
 
+                Section {
+                    NavigationLink {
+                        NotificationsSettingsView()
+                    } label: {
+                        HStack {
+                            Label("Notifications", systemImage: "bell.badge")
+                            Spacer()
+                        }
+                    }
+                } header: {
+                    Text("Alerts")
+                }
+
                 Section("Defaults") {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {

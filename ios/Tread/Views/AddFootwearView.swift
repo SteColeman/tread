@@ -10,6 +10,7 @@ struct AddFootwearView: View {
     @State private var type: FootwearType = .casual
     @State private var isDefault = false
     @State private var expectedLifespan: Double = 800
+    @State private var goalPreset: ReplacementGoalPreset = .trainers
     @State private var datePurchased: Date = Date()
     @State private var hasPurchaseDate = false
     @State private var notes = ""
@@ -52,19 +53,12 @@ struct AddFootwearView: View {
                     colorPicker
                 }
 
-                Section("Expected Lifespan") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("\(Int(expectedLifespan)) km")
-                                .font(.headline)
-                                .monospacedDigit()
-                            Spacer()
-                            Text(lifespanHint)
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Slider(value: $expectedLifespan, in: 200...2000, step: 50)
-                    }
+                Section {
+                    GoalPresetPicker(selected: $goalPreset, expectedLifespan: $expectedLifespan)
+                } header: {
+                    Text("Replacement Goal")
+                } footer: {
+                    Text("We'll warn you as this pair approaches its goal.")
                 }
 
                 Section("Purchase") {
@@ -126,16 +120,6 @@ struct AddFootwearView: View {
         )
         store.addFootwear(item)
         dismiss()
-    }
-
-    private var lifespanHint: String {
-        switch expectedLifespan {
-        case 200..<400: return "Light use"
-        case 400..<700: return "Moderate use"
-        case 700..<1200: return "Standard"
-        case 1200...: return "Heavy duty"
-        default: return ""
-        }
     }
 
     private var colorPicker: some View {

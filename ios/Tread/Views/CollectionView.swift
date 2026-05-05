@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CollectionView: View {
     @Environment(FootwearStore.self) private var store
+    @Binding var path: NavigationPath
     @State private var showAddSheet = false
     @State private var selectedFilter: FootwearStatus? = .active
     @State private var appeared = false
@@ -16,7 +17,7 @@ struct CollectionView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     if !store.footwear.isEmpty {

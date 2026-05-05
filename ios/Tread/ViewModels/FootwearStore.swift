@@ -109,6 +109,7 @@ class FootwearStore {
     }
 
     func deleteFootwear(_ item: FootwearItem) {
+        NotificationService.shared.clearFiredWarning(for: item.id)
         footwear.removeAll { $0.id == item.id }
         sessions = sessions.map { session in
             guard session.footwearId == item.id else { return session }
@@ -240,6 +241,10 @@ class FootwearStore {
         return min(distance / item.expectedLifespanKm, 1.0)
     }
 
+    func lifeRemainingKm(for item: FootwearItem) -> Double {
+        max(0, item.expectedLifespanKm - totalDistance(for: item.id))
+    }
+
     func sessionsForFootwear(_ footwearId: UUID) -> [WearSession] {
         sessions
             .filter { $0.footwearId == footwearId }
@@ -329,6 +334,64 @@ class FootwearStore {
         persistence.saveFootwear(footwear)
         persistence.saveSessions(sessions)
         persistence.saveConditionLogs(conditionLogs)
+        publishWidgetSnapshot()
+        evaluateNotifications()
+    }
+
+    private func evaluateNotifications() {
+        let items = activeFootwear.map { item in
+            (name: item.name, percent: lifecyclePercentage(for: item), id: item.id)
+        }
+        NotificationService.shared.evaluateLifeWarnings(items: items)
+    }
+
+    private func publishWidgetSnapshot() {
+        let active = defaultPair ?? activeFootwear.first
+        let activeSnapshot = active.map { snapshot(for: $0) }
+
+        let others = activeFootwear
+            .filter { $0.id != active?.id }
+            .sorted { totalDistance(for: $0.id) > totalDistance(for: $1.id) }
+            .prefix(3)
+            .map { snapshot(for: $0) }
+
+        let snap = WidgetSnapshot(
+            active: activeSnapshot,
+            others: Array(others),
+            updatedAt: Date()
+        )
+
+        var keepIds = Set<UUID>()
+        if let a = active { keepIds.insert(a.id) }
+        for o in others {
+            if let uuid = UUID(uuidString: o.id) { keepIds.insert(uuid) }
+        }
+        WidgetSnapshotService.shared.clearThumbnails(keeping: keepIds)
+        WidgetSnapshotService.shared.save(snap)
+    }
+
+    private func snapshot(for item: FootwearItem) -> WidgetShoeSnapshot {
+        let used = totalDistance(for: item.id)
+        let percent = item.expectedLifespanKm > 0 ? min(used / item.expectedLifespanKm, 1.0) : 0
+        let tag = ColorTag(rawValue: item.colorTag) ?? .slate
+
+        var photoFilename: String? = nil
+        if let originalPhoto = item.photoFilename,
+           let img = PhotoStorageService.shared.load(originalPhoto) {
+            photoFilename = WidgetSnapshotService.shared.writeThumbnail(img, for: item.id)
+        }
+
+        return WidgetShoeSnapshot(
+            id: item.id.uuidString,
+            name: item.name,
+            brand: item.brand,
+            typeIcon: item.type.icon,
+            colorHex: tag.hex,
+            usedKm: used,
+            goalKm: item.expectedLifespanKm,
+            percent: percent,
+            photoFilename: photoFilename
+        )
     }
 
     private func pushFootwearRemote(_ items: [FootwearItem]) {
