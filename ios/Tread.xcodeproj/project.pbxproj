@@ -506,9 +506,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				CODE_SIGN_ENTITLEMENTS = Tread/Tread.entitlements;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Tread uses the camera to scan the outsole of your shoes for wear analysis.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Tread lets you choose photos of your shoes, receipts, and outsole scans.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tread reads your step count and walking distance to track footwear wear and lifecycle.";
 				INFOPLIST_KEY_SupabaseAnonKey = "$(EXPO_PUBLIC_SUPABASE_ANON_KEY)";
 				INFOPLIST_KEY_SupabaseURL = "$(EXPO_PUBLIC_SUPABASE_URL)";
+				INFOPLIST_KEY_ToolkitURL = "$(EXPO_PUBLIC_TOOLKIT_URL)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -543,9 +546,12 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Tread uses the camera to scan the outsole of your shoes for wear analysis.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Tread lets you choose photos of your shoes, receipts, and outsole scans.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Tread reads your step count and walking distance to track footwear wear and lifecycle.";
 				INFOPLIST_KEY_SupabaseAnonKey = "$(EXPO_PUBLIC_SUPABASE_ANON_KEY)";
 				INFOPLIST_KEY_SupabaseURL = "$(EXPO_PUBLIC_SUPABASE_URL)";
+				INFOPLIST_KEY_ToolkitURL = "$(EXPO_PUBLIC_TOOLKIT_URL)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -32,6 +32,7 @@ final class NotificationService {
 
     // Tracks which shoes have already had their 80% warning fired
     private let firedWarningsKey = "notif_fired_life80_ids"
+    private let firedScanPromptsKey = "notif_fired_scan_prompt_ids"
 
     private var firedWarningIds: Set<String> {
         get {
@@ -150,5 +151,36 @@ final class NotificationService {
         var fired = firedWarningIds
         fired.remove(id.uuidString)
         firedWarningIds = fired
+    }
+
+    /// Fires "time for a wear scan?" prompts at 50% and 80% of replacement goal.
+    func evaluateScanPrompts(items: [(name: String, percent: Double, id: UUID, daysSinceLastScan: Int?)]) {
+        guard isAuthorized && masterEnabled else { return }
+
+        var fired = Set(UserDefaults.standard.stringArray(forKey: firedScanPromptsKey) ?? [])
+        let center = UNUserNotificationCenter.current()
+
+        for item in items {
+            for milestone in [50, 80] {
+                let key = "\(item.id.uuidString)_\(milestone)"
+                let crossed = item.percent * 100 >= Double(milestone)
+                let stillFresh = (item.daysSinceLastScan ?? 999) > 21
+                if crossed && !fired.contains(key) && stillFresh {
+                    let content = UNMutableNotificationContent()
+                    content.title = "Time for a wear scan?"
+                    content.body = "\(item.name) just hit \(milestone)% — a quick scan will tell you how it's holding up."
+                    content.sound = .default
+                    content.userInfo = ["type": "scan_prompt", "shoeId": item.id.uuidString]
+                    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
+                    let request = UNNotificationRequest(identifier: "scan_\(key)", content: content, trigger: trigger)
+                    center.add(request)
+                    fired.insert(key)
+                } else if !crossed {
+                    fired.remove(key)
+                }
+            }
+        }
+
+        UserDefaults.standard.set(Array(fired), forKey: firedScanPromptsKey)
     }
 }

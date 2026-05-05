@@ -10,6 +10,8 @@ struct FootwearDetailView: View {
     @State private var showDeleteAlert = false
     @State private var showPhotoViewer = false
     @State private var showReceiptViewer = false
+    @State private var showScanFlow = false
+    @State private var presentedScan: WearScan?
 
     private var colorTag: ColorTag {
         ColorTag(rawValue: currentItem.colorTag) ?? .slate
@@ -57,7 +59,9 @@ struct FootwearDetailView: View {
             VStack(spacing: 20) {
                 heroSection
                 quickStats
+                scanCallToAction
                 lifecycleSection
+                wearTimelineSection
                 conditionSection
                 wearHistorySection
                 infoSection
@@ -113,6 +117,18 @@ struct FootwearDetailView: View {
                 PhotoViewer(image: receiptPhoto, title: "Receipt")
             }
         }
+        .fullScreenCover(isPresented: $showScanFlow) {
+            WearScanFlow(footwear: currentItem)
+                .environment(store)
+        }
+        .sheet(item: $presentedScan) { scan in
+            NavigationStack {
+                ScanResultView(scan: scan, footwear: currentItem) {
+                    presentedScan = nil
+                }
+            }
+            .preferredColorScheme(.dark)
+        }
         .alert("Retire this pair?", isPresented: $showRetireAlert) {
             Button("Retire", role: .destructive) { store.retireFootwear(currentItem) }
             Button("Cancel", role: .cancel) { }
@@ -128,6 +144,26 @@ struct FootwearDetailView: View {
         } message: {
             Text("This permanently removes \(currentItem.name) and all associated data.")
         }
+    }
+
+    private var scans: [WearScan] {
+        store.wearScans(for: item.id)
+    }
+
+    private var latestScan: WearScan? { scans.first }
+
+    private var milestoneNudge: String? {
+        let p = lifecyclePercent
+        let scanCount = scans.count
+        let lastScanKm = latestScan?.kmAtScan ?? -1
+        let kmSinceLastScan = distance - lastScanKm
+        if scanCount == 0 && p >= 0.4 {
+            return "Halfway through this pair's life — time for a wear scan?"
+        }
+        if p >= 0.8 && (lastScanKm < 0 || kmSinceLastScan > 50) {
+            return "This pair is at \(Int(p * 100))%. A wear scan can help decide what's next."
+        }
+        return nil
     }
 
     private var photo: UIImage? {
@@ -235,6 +271,104 @@ struct FootwearDetailView: View {
             .contentShape(.rect(cornerRadius: 24))
             .onTapGesture {
                 if photo != nil { showPhotoViewer = true }
+            }
+        }
+    }
+
+    private var scanCallToAction: some View {
+        Button {
+            showScanFlow = true
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(
+                            colors: [.orange, .red],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ))
+                        .frame(width: 42, height: 42)
+                    Image(systemName: "sparkles.tv.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(latestScan == nil ? "AI Wear Scan" : "Run another wear scan")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    if let nudge = milestoneNudge {
+                        Text(nudge)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                    } else if let latestScan {
+                        Text("Last scanned \(latestScan.date.formatted(.relative(presentation: .named))) · score \(latestScan.score)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    } else {
+                        Text("3 photos of the outsole · ~10 seconds")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(.rect(cornerRadius: 14))
+            .overlay(alignment: .leading) {
+                if milestoneNudge != nil {
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.orange.opacity(0.4), lineWidth: 1)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var wearTimelineSection: some View {
+        Group {
+            if !scans.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Wear Timeline")
+                            .font(.headline)
+                        Spacer()
+                        Text("\(scans.count) scan\(scans.count == 1 ? "" : "s")")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+
+                    if scans.count > 1 {
+                        WearSparkline(scans: scans.reversed())
+                            .frame(height: 70)
+                            .padding(.horizontal, 4)
+                            .padding(.top, 4)
+                    }
+
+                    VStack(spacing: 0) {
+                        ForEach(Array(scans.enumerated()), id: \.element.id) { idx, scan in
+                            Button {
+                                presentedScan = scan
+                            } label: {
+                                WearScanRowView(scan: scan)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.plain)
+                            if idx != scans.count - 1 {
+                                Divider().padding(.leading, 14)
+                            }
+                        }
+                    }
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(.rect(cornerRadius: 14))
+                }
             }
         }
     }

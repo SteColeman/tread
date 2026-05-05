@@ -6,6 +6,7 @@ nonisolated final class PersistenceService: Sendable {
     private let footwearKey = "tread_footwear_items"
     private let sessionsKey = "tread_wear_sessions"
     private let conditionLogsKey = "tread_condition_logs"
+    private let wearScansKey = "tread_wear_scans"
 
     private let encoder: JSONEncoder = {
         let e = JSONEncoder()
@@ -56,5 +57,18 @@ nonisolated final class PersistenceService: Sendable {
             return []
         }
         return logs
+    }
+
+    func saveWearScans(_ scans: [WearScan]) {
+        guard let data = try? encoder.encode(scans) else { return }
+        UserDefaults.standard.set(data, forKey: wearScansKey)
+    }
+
+    func loadWearScans() -> [WearScan] {
+        guard let data = UserDefaults.standard.data(forKey: wearScansKey),
+              let scans = try? decoder.decode([WearScan].self, from: data) else {
+            return []
+        }
+        return scans
     }
 }

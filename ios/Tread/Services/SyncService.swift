@@ -122,10 +122,77 @@ nonisolated struct DeleteRow: Encodable, Sendable {
     let id: UUID
 }
 
+nonisolated struct WearScanRow: Codable, Sendable {
+    let id: UUID
+    let user_id: UUID
+    let footwear_id: UUID
+    let date: Date
+    let km_at_scan: Double
+    let steps_at_scan: Int
+    let score: Int
+    let verdict: String
+    let estimated_km_remaining: Double
+    let estimated_km_total_life: Double
+    let strike_pattern: String
+    let pronation: String
+    let dominant_zones: [String]
+    let injury_notes: String  // JSON-encoded string
+    let shots: String         // JSON-encoded string
+    let is_baseline: Bool
+
+    init(scan: WearScan, userId: UUID) throws {
+        self.id = scan.id
+        self.user_id = userId
+        self.footwear_id = scan.footwearId
+        self.date = scan.date
+        self.km_at_scan = scan.kmAtScan
+        self.steps_at_scan = scan.stepsAtScan
+        self.score = scan.score
+        self.verdict = scan.verdict
+        self.estimated_km_remaining = scan.estimatedKmRemaining
+        self.estimated_km_total_life = scan.estimatedKmTotalLife
+        self.strike_pattern = scan.strikePattern.rawValue
+        self.pronation = scan.pronation.rawValue
+        self.dominant_zones = scan.dominantZones.map { $0.rawValue }
+        let enc = JSONEncoder()
+        enc.dateEncodingStrategy = .iso8601
+        let notesData = try enc.encode(scan.injuryNotes)
+        self.injury_notes = String(data: notesData, encoding: .utf8) ?? "[]"
+        let shotsData = try enc.encode(scan.shots)
+        self.shots = String(data: shotsData, encoding: .utf8) ?? "[]"
+        self.is_baseline = scan.isBaseline
+    }
+
+    func toModel() -> WearScan? {
+        let dec = JSONDecoder()
+        dec.dateDecodingStrategy = .iso8601
+        let notes: [InjuryNote] = (try? dec.decode([InjuryNote].self, from: Data(injury_notes.utf8))) ?? []
+        let shotsArr: [ScanShotData] = (try? dec.decode([ScanShotData].self, from: Data(shots.utf8))) ?? []
+        return WearScan(
+            id: id,
+            footwearId: footwear_id,
+            date: date,
+            kmAtScan: km_at_scan,
+            stepsAtScan: steps_at_scan,
+            score: score,
+            verdict: verdict,
+            estimatedKmRemaining: estimated_km_remaining,
+            estimatedKmTotalLife: estimated_km_total_life,
+            strikePattern: StrikePattern(rawValue: strike_pattern) ?? .mixed,
+            pronation: Pronation(rawValue: pronation) ?? .unclear,
+            dominantZones: dominant_zones.compactMap { WearZone(rawValue: $0) },
+            injuryNotes: notes,
+            shots: shotsArr,
+            isBaseline: is_baseline
+        )
+    }
+}
+
 nonisolated struct RemoteSnapshot: Sendable {
     let footwear: [FootwearItem]
     let sessions: [WearSession]
     let logs: [ConditionLog]
+    let scans: [WearScan]
 }
 
 nonisolated final class SyncService: Sendable {
@@ -135,7 +202,7 @@ nonisolated final class SyncService: Sendable {
 
     func pull(userId: UUID) async throws -> RemoteSnapshot {
         guard let client else {
-            return RemoteSnapshot(footwear: [], sessions: [], logs: [])
+            return RemoteSnapshot(footwear: [], sessions: [], logs: [], scans: [])
         }
 
         let footwearRows: [FootwearRow] = try await client
@@ -159,10 +226,25 @@ nonisolated final class SyncService: Sendable {
             .execute()
             .value
 
+        var scans: [WearScan] = []
+        do {
+            let scanRows: [WearScanRow] = try await client
+                .from("wear_scans")
+                .select()
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+            scans = scanRows.compactMap { $0.toModel() }
+        } catch {
+            // Table may not exist yet — silently skip
+            scans = []
+        }
+
         return RemoteSnapshot(
             footwear: footwearRows.map { $0.toModel() },
             sessions: sessionRows.map { $0.toModel() },
-            logs: logRows.map { $0.toModel() }
+            logs: logRows.map { $0.toModel() },
+            scans: scans
         )
     }
 
@@ -184,6 +266,21 @@ nonisolated final class SyncService: Sendable {
         try await client.from("condition_logs").upsert(rows).execute()
     }
 
+    func pushScans(_ scans: [WearScan], userId: UUID) async throws {
+        guard let client, !scans.isEmpty else { return }
+        let rows = try scans.map { try WearScanRow(scan: $0, userId: userId) }
+        try await client.from("wear_scans").upsert(rows).execute()
+    }
+
+    func deleteScan(id: UUID, userId: UUID) async throws {
+        guard let client else { return }
+        try await client.from("wear_scans")
+            .delete()
+            .eq("id", value: id)
+            .eq("user_id", value: userId)
+            .execute()
+    }
+
     func deleteFootwear(id: UUID, userId: UUID) async throws {
         guard let client else { return }
         try await client.from("footwear_items")
@@ -198,5 +295,6 @@ nonisolated final class SyncService: Sendable {
         try await client.from("footwear_items").delete().eq("user_id", value: userId).execute()
         try await client.from("wear_sessions").delete().eq("user_id", value: userId).execute()
         try await client.from("condition_logs").delete().eq("user_id", value: userId).execute()
+        try? await client.from("wear_scans").delete().eq("user_id", value: userId).execute()
     }
 }

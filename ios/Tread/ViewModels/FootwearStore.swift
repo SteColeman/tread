@@ -6,6 +6,7 @@ class FootwearStore {
     var footwear: [FootwearItem] = []
     var sessions: [WearSession] = []
     var conditionLogs: [ConditionLog] = []
+    var wearScans: [WearScan] = []
 
     var isSyncing: Bool = false
     var lastSyncedAt: Date?
@@ -35,6 +36,7 @@ class FootwearStore {
         footwear = persistence.loadFootwear()
         sessions = persistence.loadSessions()
         conditionLogs = persistence.loadConditionLogs()
+        wearScans = persistence.loadWearScans()
     }
 
     func attach(userId: UUID?) async {
@@ -54,10 +56,12 @@ class FootwearStore {
             footwear = mergeFootwear(local: footwear, remote: remote.footwear)
             sessions = mergeSessions(local: sessions, remote: remote.sessions)
             conditionLogs = mergeLogs(local: conditionLogs, remote: remote.logs)
+            wearScans = mergeScans(local: wearScans, remote: remote.scans)
 
             try await sync.pushFootwear(footwear, userId: userId)
             try await sync.pushSessions(sessions, userId: userId)
             try await sync.pushLogs(conditionLogs, userId: userId)
+            try? await sync.pushScans(wearScans, userId: userId)
 
             persist()
             lastSyncedAt = Date()
@@ -84,6 +88,13 @@ class FootwearStore {
         var byId: [UUID: ConditionLog] = [:]
         for l in remote { byId[l.id] = l }
         for l in local { byId[l.id] = l }
+        return Array(byId.values).sorted { $0.date > $1.date }
+    }
+
+    private func mergeScans(local: [WearScan], remote: [WearScan]) -> [WearScan] {
+        var byId: [UUID: WearScan] = [:]
+        for s in remote { byId[s.id] = s }
+        for s in local { byId[s.id] = s }
         return Array(byId.values).sorted { $0.date > $1.date }
     }
 
@@ -235,6 +246,33 @@ class FootwearStore {
             .sorted { $0.date > $1.date }
     }
 
+    func wearScans(for footwearId: UUID) -> [WearScan] {
+        wearScans
+            .filter { $0.footwearId == footwearId }
+            .sorted { $0.date > $1.date }
+    }
+
+    func latestScan(for footwearId: UUID) -> WearScan? {
+        wearScans(for: footwearId).first
+    }
+
+    func addWearScan(_ scan: WearScan) {
+        wearScans.append(scan)
+        save()
+        pushScansRemote([scan])
+    }
+
+    func deleteWearScan(_ scan: WearScan) {
+        for shot in scan.shots {
+            PhotoStorageService.shared.delete(shot.photoFilename)
+        }
+        wearScans.removeAll { $0.id == scan.id }
+        save()
+        if let userId {
+            Task { [sync] in try? await sync.deleteScan(id: scan.id, userId: userId) }
+        }
+    }
+
     func lifecyclePercentage(for item: FootwearItem) -> Double {
         let distance = totalDistance(for: item.id)
         guard item.expectedLifespanKm > 0 else { return 0 }
@@ -323,6 +361,7 @@ class FootwearStore {
         footwear = []
         sessions = []
         conditionLogs = []
+        wearScans = []
         persist()
     }
 
@@ -334,6 +373,7 @@ class FootwearStore {
         persistence.saveFootwear(footwear)
         persistence.saveSessions(sessions)
         persistence.saveConditionLogs(conditionLogs)
+        persistence.saveWearScans(wearScans)
         publishWidgetSnapshot()
         evaluateNotifications()
     }
@@ -343,6 +383,14 @@ class FootwearStore {
             (name: item.name, percent: lifecyclePercentage(for: item), id: item.id)
         }
         NotificationService.shared.evaluateLifeWarnings(items: items)
+
+        let now = Date()
+        let scanItems = activeFootwear.map { item -> (name: String, percent: Double, id: UUID, daysSinceLastScan: Int?) in
+            let last = latestScan(for: item.id)?.date
+            let days = last.map { Calendar.current.dateComponents([.day], from: $0, to: now).day ?? 0 }
+            return (item.name, lifecyclePercentage(for: item), item.id, days)
+        }
+        NotificationService.shared.evaluateScanPrompts(items: scanItems)
     }
 
     private func publishWidgetSnapshot() {
@@ -407,5 +455,10 @@ class FootwearStore {
     private func pushLogsRemote(_ logs: [ConditionLog]) {
         guard let userId else { return }
         Task { [sync] in try? await sync.pushLogs(logs, userId: userId) }
+    }
+
+    private func pushScansRemote(_ scans: [WearScan]) {
+        guard let userId else { return }
+        Task { [sync] in try? await sync.pushScans(scans, userId: userId) }
     }
 }
